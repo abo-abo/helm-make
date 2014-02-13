@@ -53,7 +53,7 @@
                   (push str targets))))
             (helm :sources
                   `((name . "Targets")
-                    (candidates . ,targets)
+                    (candidates . ,(nreverse targets))
                     (action . hm-action)))
             (message "%s" targets)))
       (error "No Makefile in %s" default-directory))))
