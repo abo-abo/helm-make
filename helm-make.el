@@ -25,7 +25,7 @@
 
 ;;; Commentary:
 ;;
-;; A call to `hm' will give you a `helm' selection of this directory
+;; A call to `helm-make' will give you a `helm' selection of this directory
 ;; Makefile's targets.  Selecting a target will call `compile' on it.
 
 ;;; Code:
