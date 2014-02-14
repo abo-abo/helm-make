@@ -1,4 +1,4 @@
-;;; helm-make.el --- Select makefile target with helm.
+;;; helm-make.el --- Select makefile target with helm
 
 ;; Copyright (C) 2014 Oleh Krehel
 
@@ -32,12 +32,12 @@
 
 (require 'helm)
 
-(defun hm-action (target)
+(defun helm-make-action (target)
   "Make TARGET."
   (compile (format "make %s" target)))
 
 ;;;###autoload
-(defun hm ()
+(defun helm-make ()
   "Use `helm' to select a Makefile target and `compile'."
   (interactive)
   (let ((file (expand-file-name "Makefile"))
@@ -54,7 +54,7 @@
             (helm :sources
                   `((name . "Targets")
                     (candidates . ,(nreverse targets))
-                    (action . hm-action)))
+                    (action . helm-make-action)))
             (message "%s" targets)))
       (error "No Makefile in %s" default-directory))))
 
