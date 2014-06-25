@@ -37,25 +37,27 @@
   (compile (format "make %s" target)))
 
 ;;;###autoload
-(defun helm-make ()
-  "Use `helm' to select a Makefile target and `compile'."
+(defun helm-make (&optional makefile)
+  "Use `helm' to select a Makefile target and `compile'.
+If makefile is specified use it as path to Makefile"
   (interactive)
-  (let ((file (expand-file-name "Makefile"))
+  (let ((file (expand-file-name (if makefile makefile "Makefile")))
         targets)
     (if (file-exists-p file)
-        (with-temp-buffer
-          (insert-file-contents file)
-          (goto-char (point-min))
-          (let (targets)
-            (while (re-search-forward "^\\([^: \n]+\\):" nil t)
-              (let ((str (match-string 1)))
-                (unless (string-match "^\\." str)
-                  (push str targets))))
-            (helm :sources
-                  `((name . "Targets")
-                    (candidates . ,(nreverse targets))
-                    (action . helm-make-action)))
-            (message "%s" targets)))
+        (with-helm-default-directory (file-name-directory file)
+            (with-temp-buffer
+              (insert-file-contents file)
+              (goto-char (point-min))
+              (let (targets)
+                (while (re-search-forward "^\\([^: \n]+\\):" nil t)
+                  (let ((str (match-string 1)))
+                    (unless (string-match "^\\." str)
+                      (push str targets))))
+                (helm :sources
+                      `((name . "Targets")
+                        (candidates . ,(nreverse targets))
+                        (action . helm-make-action)))
+                (message "%s" targets))))
       (error "No Makefile in %s" default-directory))))
 
 (provide 'helm-make)
