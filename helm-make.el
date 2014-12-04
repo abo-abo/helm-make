@@ -5,7 +5,7 @@
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/helm-make
 ;; Version: 0.1
-;; Package-Requires: ((helm "1.5.3"))
+;; Package-Requires: ((helm "1.5.3") (projectile "0.11.0"))
 ;; Keywords: makefile
 
 ;; This file is not part of GNU Emacs
@@ -59,6 +59,17 @@ If makefile is specified use it as path to Makefile"
                         (action . helm-make-action)))
                 (message "%s" targets))))
       (error "No Makefile in %s" default-directory))))
+
+;;;###autoload
+(defun helm-make-projectile ()
+  "Call `helm-make' for `projectile-project-root'."
+  (interactive)
+  (require 'projectile)
+  (let ((makefile (expand-file-name
+                   "Makefile"
+                   (projectile-project-root))))
+    (helm-make
+     (and (file-exists-p makefile) makefile))))
 
 (provide 'helm-make)
 
