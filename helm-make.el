@@ -1,4 +1,4 @@
-;;; helm-make.el --- Select makefile target with helm
+;;; helm-make.el --- Select a Makefile target with helm
 
 ;; Copyright (C) 2014 Oleh Krehel
 
@@ -32,6 +32,15 @@
 
 (require 'helm)
 
+(defgroup helm-make nil
+  "Select a Makefile target with helm."
+  :group 'convenience)
+
+(defcustom helm-make-do-save nil
+  "If t, save all open buffers visiting files from Makefile's directory."
+  :type 'boolean
+  :group 'helm-make)
+
 (defun helm-make-action (target)
   "Make TARGET."
   (compile (format "make %s" target)))
@@ -44,20 +53,35 @@ If makefile is specified use it as path to Makefile"
   (let ((file (expand-file-name (if makefile makefile "Makefile")))
         targets)
     (if (file-exists-p file)
-        (with-helm-default-directory (file-name-directory file)
-            (with-temp-buffer
-              (insert-file-contents file)
-              (goto-char (point-min))
-              (let (targets)
-                (while (re-search-forward "^\\([^: \n]+\\):" nil t)
-                  (let ((str (match-string 1)))
-                    (unless (string-match "^\\." str)
-                      (push str targets))))
-                (helm :sources
-                      `((name . "Targets")
-                        (candidates . ,(nreverse targets))
-                        (action . helm-make-action)))
-                (message "%s" targets))))
+        (progn
+          (when helm-make-do-save
+            (let* ((regex (format "^%s" default-directory))
+                   (buffers
+                    (cl-remove-if-not
+                     (lambda (b)
+                       (let ((name (buffer-file-name b)))
+                         (and name
+                              (string-match regex (expand-file-name name)))))
+                     (buffer-list))))
+              (mapc
+               (lambda (b)
+                 (with-current-buffer b
+                   (save-buffer)))
+               buffers)))
+          (with-helm-default-directory (file-name-directory file)
+              (with-temp-buffer
+                (insert-file-contents file)
+                (goto-char (point-min))
+                (let (targets)
+                  (while (re-search-forward "^\\([^: \n]+\\):" nil t)
+                    (let ((str (match-string 1)))
+                      (unless (string-match "^\\." str)
+                        (push str targets))))
+                  (helm :sources
+                        `((name . "Targets")
+                          (candidates . ,(nreverse targets))
+                          (action . helm-make-action)))
+                  (message "%s" targets)))))
       (error "No Makefile in %s" default-directory))))
 
 ;;;###autoload
