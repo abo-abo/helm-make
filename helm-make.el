@@ -31,6 +31,7 @@
 ;;; Code:
 
 (require 'helm)
+(require 'helm-match-plugin)
 
 (defgroup helm-make nil
   "Select a Makefile target with helm."
