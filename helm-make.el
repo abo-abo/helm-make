@@ -42,6 +42,11 @@
   :type 'boolean
   :group 'helm-make)
 
+(defcustom helm-make-build-dir ""
+  "Specify a build directory for out of source build."
+  :type '(string)
+  :group 'helm-make)
+
 (defun helm-make-action (target)
   "Make TARGET."
   (compile (format "make %s" target)))
@@ -107,7 +112,8 @@ If makefile is specified use it as path to Makefile"
   (require 'projectile)
   (let ((makefile (expand-file-name
                    "Makefile"
-                   (projectile-project-root))))
+		   (concat (projectile-project-root) helm-make-build-dir))))
+
     (helm-make
      (and (file-exists-p makefile) makefile))))
 
