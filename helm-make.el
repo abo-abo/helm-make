@@ -46,6 +46,13 @@
   "Make TARGET."
   (compile (format "make %s" target)))
 
+(defcustom helm-make-completion-method 'helm
+  "Method to select a candidate from a list of strings."
+  :type '(choice
+          (const :tag "Helm" helm)
+          (const :tag "Ido" ido)
+          (const :tag "Ivy" ivy)))
+
 ;;;###autoload
 (defun helm-make (&optional makefile)
   "Use `helm' to select a Makefile target and `compile'.
@@ -73,16 +80,24 @@ If makefile is specified use it as path to Makefile"
               (with-temp-buffer
                 (insert-file-contents file)
                 (goto-char (point-min))
-                (let (targets)
+                (let (targets target)
                   (while (re-search-forward "^\\([^: \n]+\\):" nil t)
                     (let ((str (match-string 1)))
                       (unless (string-match "^\\." str)
                         (push str targets))))
-                  (helm :sources
-                        `((name . "Targets")
-                          (candidates . ,(nreverse targets))
-                          (action . helm-make-action)))
-                  (message "%s" targets)))))
+                  (setq targets (nreverse targets))
+                  (cl-case helm-make-completion-method
+                    (helm
+                     (helm :sources
+                           `((name . "Targets")
+                             (candidates . ,targets)
+                             (action . helm-make-action))))
+                    (ivy
+                     (when (setq target (ivy-read "Target: " targets))
+                       (helm-make-action target)))
+                    (ido
+                     (when (setq target (ido-completing-read "Target: " targets))
+                       (helm-make-action target))))))))
       (error "No Makefile in %s" default-directory))))
 
 ;;;###autoload
