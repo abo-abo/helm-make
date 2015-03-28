@@ -43,9 +43,11 @@
   :group 'helm-make)
 
 (defcustom helm-make-build-dir ""
-  "Specify a build directory for out of source build."
+  "Specify a build directory for an out of source build.
+The path should be relative to the project root."
   :type '(string)
   :group 'helm-make)
+(make-variable-buffer-local 'helm-make-build-dir)
 
 (defun helm-make-action (target)
   "Make TARGET."
