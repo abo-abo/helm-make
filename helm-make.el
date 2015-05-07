@@ -49,9 +49,12 @@ The path should be relative to the project root."
   :group 'helm-make)
 (make-variable-buffer-local 'helm-make-build-dir)
 
+(defvar helm-make-command nil
+  "Store the make command.")
+
 (defun helm-make-action (target)
   "Make TARGET."
-  (compile (format "make %s" target)))
+  (compile (format helm-make-command target)))
 
 (defcustom helm-make-completion-method 'helm
   "Method to select a candidate from a list of strings."
@@ -61,11 +64,17 @@ The path should be relative to the project root."
           (const :tag "Ivy" ivy)))
 
 ;;;###autoload
-(defun helm-make (&optional makefile)
-  "Use `helm' to select a Makefile target and `compile'.
-If makefile is specified use it as path to Makefile"
-  (interactive)
-  (let ((file (expand-file-name (if makefile makefile "Makefile")))
+(defun helm-make (&optional arg)
+  "Call \"make -j ARG target\". Target is selected with completion."
+  (interactive "p")
+  "make %s"
+  (setq helm-make-command (format "make -j%d %%s" arg))
+  (helm--make
+   "Makefile"))
+
+(defun helm--make (makefile)
+  "Call make for MAKEFILE."
+  (let ((file (expand-file-name makefile))
         targets)
     (if (file-exists-p file)
         (progn
@@ -108,16 +117,18 @@ If makefile is specified use it as path to Makefile"
       (error "No Makefile in %s" default-directory))))
 
 ;;;###autoload
-(defun helm-make-projectile ()
-  "Call `helm-make' for `projectile-project-root'."
-  (interactive)
+(defun helm-make-projectile (&optional arg)
+  "Call `helm-make' for `projectile-project-root'.
+ARG specifies the number of cores."
+  (interactive "p")
   (require 'projectile)
+  (setq helm-make-command (format "make -j%d %%s" arg))
   (let ((makefile (expand-file-name
                    "Makefile"
 		   (concat (projectile-project-root) helm-make-build-dir))))
 
     (helm-make
-     (and (file-exists-p makefile) makefile))))
+     (if (file-exists-p makefile) makefile "Makefile"))))
 
 (provide 'helm-make)
 
