@@ -127,7 +127,7 @@ ARG specifies the number of cores."
                    "Makefile"
 		   (concat (projectile-project-root) helm-make-build-dir))))
 
-    (helm-make
+    (helm--make
      (if (file-exists-p makefile) makefile "Makefile"))))
 
 (provide 'helm-make)
