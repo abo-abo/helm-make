@@ -52,6 +52,9 @@ The path should be relative to the project root."
 (defvar helm-make-command nil
   "Store the make command.")
 
+(defvar helm-make-target-history nil
+  "Holds the recently used targets.")
+
 (defun helm-make-action (target)
   "Make TARGET."
   (compile (format helm-make-command target)))
@@ -107,12 +110,20 @@ The path should be relative to the project root."
                      (helm :sources
                            `((name . "Targets")
                              (candidates . ,targets)
-                             (action . helm-make-action))))
+                             (action . helm-make-action))
+                           :history 'helm-make-target-history
+                           :preselect (car helm-make-target-history)))
                     (ivy
-                     (when (setq target (ivy-read "Target: " targets))
-                       (helm-make-action target)))
+                     (ivy-read "Target: "
+                               targets
+                               :history 'helm-make-target-history
+                               :preselect (car helm-make-target-history)
+                               :action 'helm-make-action))
                     (ido
-                     (when (setq target (ido-completing-read "Target: " targets))
+                     (when (setq target (ido-completing-read
+                                         "Target: " targets
+                                         nil nil nil
+                                         'helm-make-target-history))
                        (helm-make-action target))))))))
       (error "No Makefile in %s" default-directory))))
 
