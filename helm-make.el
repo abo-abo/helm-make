@@ -44,7 +44,10 @@
 
 (defcustom helm-make-build-dir ""
   "Specify a build directory for an out of source build.
-The path should be relative to the project root."
+The path should be relative to the project root.
+
+When non-nil `helm-make-projectile' will first look in that directory for a
+makefile."
   :type '(string)
   :group 'helm-make)
 (make-variable-buffer-local 'helm-make-build-dir)
@@ -119,16 +122,25 @@ The path should be relative to the project root."
 ;;;###autoload
 (defun helm-make-projectile (&optional arg)
   "Call `helm-make' for `projectile-project-root'.
-ARG specifies the number of cores."
+ARG specifies the number of cores.
+
+By default `helm-make-projectile' will look in `projectile-project-root'
+followed by `projectile-project-root'/build, for a makefile.
+
+You can specify an additional directory to search for a makefile by
+setting the buffer local variable `helm-make-build-dir'."
   (interactive "p")
   (require 'projectile)
   (setq helm-make-command (format "make -j%d %%s" arg))
-  (let ((makefile (expand-file-name
-                   "Makefile"
-		   (concat (projectile-project-root) helm-make-build-dir))))
-
-    (helm--make
-     (if (file-exists-p makefile) makefile "Makefile"))))
+  (let* ((dirl '("" "build"))
+	 (makefile (catch 'break
+		     (dolist (var (add-to-list 'dirl helm-make-build-dir))
+		       (setq makefile (expand-file-name
+				       "Makefile"
+				       (concat (projectile-project-root) var)))
+		       (when (file-exists-p makefile)
+			 (throw 'break makefile))))))
+    (helm--make (if makefile makefile "Makefile"))))
 
 (provide 'helm-make)
 
