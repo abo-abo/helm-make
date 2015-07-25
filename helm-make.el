@@ -123,7 +123,7 @@ The path should be relative to the project root."
 				 :initial-input (car helm-make-recent-target-list)
 				 :history 'helm-make-recent-target-list
 				 :preselect (car helm-make-recent-target-list)
-				 :action 'helm-make-action)))
+				 :action 'helm-make-action))
 		      (ido
 		       (when (setq target (ido-completing-read "Target: "
 							       targets nil nil
