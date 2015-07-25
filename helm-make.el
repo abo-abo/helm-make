@@ -52,6 +52,9 @@ The path should be relative to the project root."
 (defvar helm-make-command nil
   "Store the make command.")
 
+(defvar helm-make-recent-target-list nil
+  "Holds the recently used targets.")
+
 (defun helm-make-action (target)
   "Make TARGET."
   (compile (format helm-make-command target)))
@@ -102,18 +105,32 @@ The path should be relative to the project root."
                       (unless (string-match "^\\." str)
                         (push str targets))))
                   (setq targets (nreverse targets))
-                  (cl-case helm-make-completion-method
-                    (helm
-                     (helm :sources
-                           `((name . "Targets")
-                             (candidates . ,targets)
-                             (action . helm-make-action))))
-                    (ivy
-                     (when (setq target (ivy-read "Target: " targets))
-                       (helm-make-action target)))
-                    (ido
-                     (when (setq target (ido-completing-read "Target: " targets))
-                       (helm-make-action target))))))))
+		  (delete-dups helm-make-recent-target-list)
+		  (let ((default-target-list
+			  (delete (car helm-make-recent-target-list) helm-make-recent-target-list)))
+		    (cl-case helm-make-completion-method
+		      (helm
+		       (helm :sources
+			     `((name . "Targets")
+			       (candidates . ,targets)
+			       (action . helm-make-action))
+			     :input (car helm-make-recent-target-list)
+			     :history 'helm-make-recent-target-list
+			     :default default-target-list))
+		      (ivy
+		       (ivy-read "Target: "
+				 targets
+				 :initial-input (car helm-make-recent-target-list)
+				 :history 'helm-make-recent-target-list
+				 :preselect (car helm-make-recent-target-list)
+				 :action 'helm-make-action))
+		      (ido
+		       (when (setq target (ido-completing-read "Target: "
+							       targets nil nil
+							       (car helm-make-recent-target-list)
+							       'helm-make-recent-target-list
+							       default-target-list))
+			 (helm-make-action target)))))))))
       (error "No Makefile in %s" default-directory))))
 
 ;;;###autoload
