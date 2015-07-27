@@ -117,7 +117,8 @@ makefile."
                              (candidates . ,targets)
                              (action . helm-make-action))
                            :history 'helm-make-target-history
-                           :preselect (car helm-make-target-history)))
+                           :preselect (when helm-make-target-history
+                                        (format "^%s$" (car helm-make-target-history)))))
                     (ivy
                      (ivy-read "Target: "
                                targets
