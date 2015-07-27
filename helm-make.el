@@ -113,11 +113,15 @@ makefile."
                   (cl-case helm-make-completion-method
                     (helm
                      (helm :sources
-                           `((name . "Targets")
-                             (candidates . ,targets)
-                             (action . helm-make-action))
-                           :history 'helm-make-target-history
-                           :preselect (car helm-make-target-history)))
+                           (helm-build-sync-source "Targets"
+                             :candidates targets
+                             :action (lambda (candidate)
+                                       (push candidate
+                                             helm-make-target-history)
+                                       (helm-make-action candidate)))
+                           :preselect
+                           (when helm-make-target-history
+                             (format "^%s$" (car helm-make-target-history)))))
                     (ivy
                      (ivy-read "Target: "
                                targets
