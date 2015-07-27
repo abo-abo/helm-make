@@ -121,10 +121,7 @@ makefile."
                                        (helm-make-action candidate)))
                            :preselect
                            (when helm-make-target-history
-                             (concat "\\_<"
-                                     (regexp-quote
-                                      (car helm-make-target-history))
-                                     "\\_>"))))
+                             (format "^%s$" (car helm-make-target-history)))))
                     (ivy
                      (ivy-read "Target: "
                                targets
