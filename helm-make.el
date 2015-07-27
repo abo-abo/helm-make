@@ -108,6 +108,8 @@ makefile."
                       (unless (string-match "^\\." str)
                         (push str targets))))
                   (setq targets (nreverse targets))
+                  (setq helm-make-target-history
+                        (delete-dups helm-make-target-history))
                   (cl-case helm-make-completion-method
                     (helm
                      (helm :sources
