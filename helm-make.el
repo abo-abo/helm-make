@@ -100,16 +100,19 @@ makefile."
                buffers)))
           (with-helm-default-directory (file-name-directory file)
               (with-temp-buffer
-                (insert-file-contents file)
+                (insert (shell-command-to-string "make -qp"))
                 (goto-char (point-min))
-                (let (targets target)
-                  (while (re-search-forward "^\\([^: \n]+\\):" nil t)
+                (let (targets target prev-line)
+                  (while (re-search-forward "^\\([a-zA-Z0-9][^$#\/\t=]*\\):\\([^=]\\|$\\)" nil t)
+		    (forward-line -2)
+		    (setq prev-line (buffer-substring (line-beginning-position) (line-end-position)))
+		    (forward-line 3)
                     (let ((str (match-string 1)))
-                      (unless (string-match "^\\." str)
+                      (unless (string-match "^# Not a target:" prev-line)
                         (push str targets))))
+		  (delete-dups targets)
                   (setq targets (nreverse targets))
-                  (setq helm-make-target-history
-                        (delete-dups helm-make-target-history))
+		  (delete-dups helm-make-target-history)
                   (cl-case helm-make-completion-method
                     (helm
                      (helm :sources
