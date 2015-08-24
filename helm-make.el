@@ -79,23 +79,24 @@ makefile."
    "Makefile"))
 
 (defun helm--make-target-list-qp (makefile)
-  "Return the target list for MAKEFILE using \"make -qp\"."
+  "Return sorted target list for MAKEFILE using \"make -qp\"."
   (let ((default-directory (file-name-directory
                             (expand-file-name makefile)))
         targets target)
     (with-temp-buffer
       (insert (shell-command-to-string "make -qp"))
       (goto-char (point-min))
-      (unless (re-search-forward "^# Files\n" nil t)
+      (unless (re-search-forward "^# Files" nil t)
         (error "Unexpected \"make -qp\" output"))
-      (while (re-search-forward "^\\([^: \n]+\\):[^=]" nil t)
+      (while (re-search-forward "^\\([^%$:\/#\n\t =]+\\):\\([^=]\\|$\\)" nil t)
         (setq target (match-string 1))
-        (unless (or (equal target ".PHONY")
-                    (save-excursion
-                      (goto-char (match-beginning 0))
-                      (looking-back "# Not a target:\n")))
+        (unless (or (save-excursion
+		      (goto-char (match-beginning 0))
+		      (forward-line -1)
+		      (looking-at "^# Not a target:"))
+		    (string-match "^\\." target))
           (push target targets)))
-      (nreverse (delete-dups targets)))))
+      (sort (delete-dups targets) 'string<))))
 
 (defun helm--make-target-list-default (makefile)
   "Return the target list for MAKEFILE by parsing it."
