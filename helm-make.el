@@ -137,7 +137,8 @@ makefile."
                buffers)))
           (let ((targets (if (eq helm-make-list-target-method 'default)
                              (helm--make-target-list-default file)
-                           (helm--make-target-list-qp file))))
+                           (helm--make-target-list-qp file)))
+                (default-directory (file-name-directory file)))
             (delete-dups helm-make-target-history)
             (cl-case helm-make-completion-method
               (helm
