@@ -23,3 +23,12 @@ directory will be saved.
 #### `helm-make-projectile`
 
 This is a `helm-make` called with `(projectile-project-root)` as base directory.
+
+
+#### `helm-make-list-target-method`
+
+What method should be used to parse the Makefile. The default value is
+`default`, which is a pure elisp solution, but falls a bit short when the
+Makefile includes other Makefile's. The second option is `qp`, it is much more
+accurate, as it uses the database produced by make to extract the
+targets. But could be a bit slower when the database produced by make is large.
