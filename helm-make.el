@@ -79,16 +79,18 @@ makefile."
    "Makefile"))
 
 (defun helm--make-target-list-qp (makefile)
-  "Return sorted target list for MAKEFILE using \"make -qp\"."
+  "Return sorted target list for MAKEFILE using \"make -nqp\"."
   (let ((default-directory (file-name-directory
                             (expand-file-name makefile)))
         targets target)
     (with-temp-buffer
-      (insert (shell-command-to-string "make -qp"))
+      (insert
+       (shell-command-to-string
+        "make -nqp __BASH_MAKE_COMPLETION__=1 .DEFAULT 2>/dev/null"))
       (goto-char (point-min))
       (unless (re-search-forward "^# Files" nil t)
-        (error "Unexpected \"make -qp\" output"))
-      (while (re-search-forward "^\\([^%$:\/#\n\t =]+\\):\\([^=]\\|$\\)" nil t)
+        (error "Unexpected \"make -nqp\" output"))
+      (while (re-search-forward "^\\([^%$:#\n\t ]+\\):\\([^=]\\|$\\)" nil t)
         (setq target (match-string 1))
         (unless (or (save-excursion
 		      (goto-char (match-beginning 0))
