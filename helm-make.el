@@ -4,7 +4,7 @@
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/helm-make
-;; Version: 0.1.0
+;; Version: 0.2.0
 ;; Package-Requires: ((helm "1.5.3") (projectile "0.11.0"))
 ;; Keywords: makefile
 
@@ -33,6 +33,8 @@
 (require 'helm)
 (require 'helm-multi-match)
 
+(declare-function ivy-read "ext:ivy")
+
 (defgroup helm-make nil
   "Select a Makefile target with helm."
   :group 'convenience)
@@ -52,13 +54,39 @@ makefile."
   :group 'helm-make)
 (make-variable-buffer-local 'helm-make-build-dir)
 
+(defcustom helm-make-sort-targets nil
+  "Whether targets shall be sorted.
+If t, targets will be sorted as a final step before calling the
+completion method.
+
+HINT: If you are facing performance problems set this to nil.
+This might be the case, if there are thousand of targets."
+  :type 'boolean
+  :group 'helm-make)
+
+(defcustom helm-make-cache-targets nil
+  "Whether to cache the targets or not.
+
+If t, cache targets of Makefile. If `helm-make' or `helm-make-projectile'
+gets called for the same Makefile again, and the Makefile hasn't changed
+meanwhile, i.e. the modification time is `equal' to the cached one, reuse
+the cached targets, instead of recomputing them. If nil do nothing.
+
+You can reset the cache by calling `helm-make-reset-db'."
+  :type 'boolean
+  :group 'helm-make)
+
 (defvar helm-make-command nil
   "Store the make command.")
 
 (defvar helm-make-target-history nil
   "Holds the recently used targets.")
 
-(defun helm-make-action (target)
+(defvar helm-make-makefile-names '("Makefile" "makefile" "GNUmakefile")
+  "List of Makefile names which make recognizes.
+An exception is \"GNUmakefile\", only GNU make unterstand it.")
+
+(defun helm--make-action (target)
   "Make TARGET."
   (compile (format helm-make-command target)))
 
@@ -75,11 +103,13 @@ makefile."
   (interactive "p")
   "make %s"
   (setq helm-make-command (format "make -j%d %%s" arg))
-  (helm--make
-   "Makefile"))
+  (let ((makefile (helm--make-makefile-exists default-directory)))
+    (if makefile
+        (helm--make makefile)
+      (error "No Makefile in %s" default-directory))))
 
 (defun helm--make-target-list-qp (makefile)
-  "Return sorted target list for MAKEFILE using \"make -nqp\"."
+  "Return the target list for MAKEFILE by parsing the output of \"make -nqp\"."
   (let ((default-directory (file-name-directory
                             (expand-file-name makefile)))
         targets target)
@@ -96,9 +126,9 @@ makefile."
 		      (goto-char (match-beginning 0))
 		      (forward-line -1)
 		      (looking-at "^# Not a target:"))
-		    (string-match "^\\." target))
-          (push target targets)))
-      (sort (delete-dups targets) 'string<))))
+                    (string-match "^\\([/a-zA-Z0-9_. -]+/\\)?\\." target))
+          (push target targets))))
+    targets))
 
 (defun helm--make-target-list-default (makefile)
   "Return the target list for MAKEFILE by parsing it."
@@ -110,7 +140,7 @@ makefile."
         (let ((str (match-string 1)))
           (unless (string-match "^\\." str)
             (push str targets)))))
-    (setq targets (nreverse targets))))
+    targets))
 
 (defcustom helm-make-list-target-method 'default
   "Method of obtaining the list of Makefile targets."
@@ -118,54 +148,116 @@ makefile."
           (const :tag "Default" default)
           (const :tag "make -qp" qp)))
 
+(defun helm--make-makefile-exists (base-dir &optional dir-list)
+  "Check if one of `helm-make-makefile-names' exist in BASE-DIR.
+
+Returns the absolute filename to the Makefile, if one exists,
+otherwise nil.
+
+If DIR-LIST is non-nil, also search for `helm-make-makefile-names'
+in that directories. DIR-LIST directories should be relative to
+BASE-DIR."
+  (let* ((default-directory (file-truename base-dir))
+         (makefiles
+          (progn
+            (unless (and dir-list (listp dir-list))
+              (setq dir-list (list "")))
+            (let (result)
+              (dolist (dir dir-list)
+                (dolist (makefile helm-make-makefile-names)
+                  (push (expand-file-name makefile dir) result)))
+              (reverse result)))))
+    (cl-find-if 'file-exists-p makefiles)))
+
+(defvar helm-make-db (make-hash-table :test 'equal)
+  "An alist of Makefile and corresponding targets.")
+
+(cl-defstruct helm-make-dbfile
+  targets
+  modtime
+  sorted)
+
+(defun helm--make-cached-targets (makefile)
+  "Return cached targets of MAKEFILE.
+
+If there are no cached targets for MAKEFILE, the MAKEFILE modification
+time has changed, or `helm-make-cache-targets' is nil, parse the MAKEFILE,
+and cache targets of MAKEFILE, if `helm-make-cache-targets' is t."
+  (let* ((att (file-attributes makefile 'integer))
+         (modtime (if att (nth 5 att) nil))
+         (entry (gethash makefile helm-make-db nil))
+         (new-entry (make-helm-make-dbfile))
+         (targets (cond
+                   ((and helm-make-cache-targets
+                         entry
+                         (equal modtime (helm-make-dbfile-modtime entry))
+                         (helm-make-dbfile-targets entry))
+                    (helm-make-dbfile-targets entry))
+                   (t
+                    (delete-dups (if (eq helm-make-list-target-method 'default)
+                                     (helm--make-target-list-default makefile)
+                                   (helm--make-target-list-qp makefile)))))))
+    (when helm-make-sort-targets
+      (unless (and helm-make-cache-targets
+                   entry
+                   (helm-make-dbfile-sorted entry))
+        (setq targets (sort targets 'string<)))
+      (setf (helm-make-dbfile-sorted new-entry) t))
+
+    (when helm-make-cache-targets
+      (setf (helm-make-dbfile-targets new-entry) targets
+            (helm-make-dbfile-modtime new-entry) modtime)
+      (puthash makefile new-entry helm-make-db))
+    targets))
+
+;;;###autoload
+(defun helm-make-reset-cache ()
+  "Reset cache, see `helm-make-cache-targets'."
+  (interactive)
+  (clrhash helm-make-db))
+
 (defun helm--make (makefile)
   "Call make for MAKEFILE."
-  (let ((file (expand-file-name makefile)))
-    (if (file-exists-p file)
-        (progn
-          (when helm-make-do-save
-            (let* ((regex (format "^%s" default-directory))
-                   (buffers
-                    (cl-remove-if-not
-                     (lambda (b)
-                       (let ((name (buffer-file-name b)))
-                         (and name
-                              (string-match regex (expand-file-name name)))))
-                     (buffer-list))))
-              (mapc
-               (lambda (b)
-                 (with-current-buffer b
-                   (save-buffer)))
-               buffers)))
-          (let ((targets (if (eq helm-make-list-target-method 'default)
-                             (helm--make-target-list-default file)
-                           (helm--make-target-list-qp file)))
-                (default-directory (file-name-directory file)))
-            (delete-dups helm-make-target-history)
-            (cl-case helm-make-completion-method
-              (helm
-               (helm :sources
-                     `((name . "Targets")
-                       (candidates . ,targets)
-                       (action . helm-make-action))
-                     :history 'helm-make-target-history
-                     :preselect (when helm-make-target-history
-                                  (format "^%s$" (car helm-make-target-history)))))
-              (ivy
-               (ivy-read "Target: "
-                         targets
-                         :history 'helm-make-target-history
-                         :preselect (car helm-make-target-history)
-                         :action 'helm-make-action
-                         :require-match t))
-              (ido
-               (let ((target (ido-completing-read
-                              "Target: " targets
-                              nil nil nil
-                              'helm-make-target-history)))
-                 (when target
-                   (helm-make-action target)))))))
-      (error "No Makefile in %s" default-directory))))
+  (when helm-make-do-save
+    (let* ((regex (format "^%s" default-directory))
+           (buffers
+            (cl-remove-if-not
+             (lambda (b)
+               (let ((name (buffer-file-name b)))
+                 (and name
+                      (string-match regex (expand-file-name name)))))
+             (buffer-list))))
+      (mapc
+       (lambda (b)
+         (with-current-buffer b
+           (save-buffer)))
+       buffers)))
+  (let ((targets (helm--make-cached-targets makefile))
+        (default-directory (file-name-directory makefile)))
+    (delete-dups helm-make-target-history)
+    (cl-case helm-make-completion-method
+      (helm
+       (helm :sources
+             `((name . "Targets")
+               (candidates . ,targets)
+               (action . helm--make-action))
+             :history 'helm-make-target-history
+             :preselect (when helm-make-target-history
+                          (format "^%s$" (car helm-make-target-history)))))
+      (ivy
+       (ivy-read "Target: "
+                 targets
+                 :history 'helm-make-target-history
+                 :preselect (car helm-make-target-history)
+                 :action 'helm--make-action
+                 :require-match t))
+      (ido
+       (let ((target (ido-completing-read
+                      "Target: " targets
+                      nil nil nil
+                      'helm-make-target-history)))
+         (when target
+           (helm--make-action target)))))))
 
 ;;;###autoload
 (defun helm-make-projectile (&optional arg)
@@ -180,19 +272,15 @@ setting the buffer local variable `helm-make-build-dir'."
   (interactive "p")
   (require 'projectile)
   (setq helm-make-command (format "make -j%d %%s" arg))
-  (let ((makefile
-         (cl-find-if 'file-exists-p
-                     (mapcar
-                      (lambda (x)
-                        (expand-file-name
-                         "Makefile"
-                         (concat (projectile-project-root) x)))
-                      (if (stringp helm-make-build-dir)
-                          `(,helm-make-build-dir "" "build")
-                        `(,@helm-make-build-dir "" "build"))))))
+  (let ((makefile (helm--make-makefile-exists
+                   (projectile-project-root)
+                   (if (and (stringp helm-make-build-dir)
+                            (not (string-blank-p helm-make-build-dir)))
+                       `(,helm-make-build-dir "" "build")
+                     `(,@helm-make-build-dir "" "build")))))
     (if makefile
         (helm--make makefile)
-      (error "No Makefile found in %s" default-directory))))
+      (error "No Makefile found for project %s" (projectile-project-root)))))
 
 (provide 'helm-make)
 
