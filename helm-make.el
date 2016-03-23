@@ -154,9 +154,7 @@ An exception is \"GNUmakefile\", only GNU make unterstand it.")
 Returns the absolute filename to the Makefile, if one exists,
 otherwise nil.
 
-If DIR-LIST is non-nil, also search for `helm-make-makefile-names'
-in that directories. DIR-LIST directories should be relative to
-BASE-DIR."
+If DIR-LIST is non-nil, also search for `helm-make-makefile-names'."
   (let* ((default-directory (file-truename base-dir))
          (makefiles
           (progn
