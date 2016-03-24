@@ -273,7 +273,7 @@ setting the buffer local variable `helm-make-build-dir'."
   (let ((makefile (helm--make-makefile-exists
                    (projectile-project-root)
                    (if (and (stringp helm-make-build-dir)
-                            (not (string-blank-p helm-make-build-dir)))
+                            (not (string-match-p "\\`[ \t\n\r]*\\'" helm-make-build-dir)))
                        `(,helm-make-build-dir "" "build")
                      `(,@helm-make-build-dir "" "build")))))
     (if makefile
