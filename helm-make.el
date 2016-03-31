@@ -76,6 +76,11 @@ You can reset the cache by calling `helm-make-reset-db'."
   :type 'boolean
   :group 'helm-make)
 
+(defcustom helm-make-executable "make"
+  "Store the name of make executable."
+  :type '(string)
+  :group 'helm-make)
+
 (defvar helm-make-command nil
   "Store the make command.")
 
@@ -102,7 +107,7 @@ An exception is \"GNUmakefile\", only GNU make unterstand it.")
   "Call \"make -j ARG target\". Target is selected with completion."
   (interactive "p")
   "make %s"
-  (setq helm-make-command (format "make -j%d %%s" arg))
+  (setq helm-make-command (format "%s -j%d %%s" helm-make-executable arg))
   (let ((makefile (helm--make-makefile-exists default-directory)))
     (if makefile
         (helm--make makefile)
@@ -269,7 +274,7 @@ You can specify an additional directory to search for a makefile by
 setting the buffer local variable `helm-make-build-dir'."
   (interactive "p")
   (require 'projectile)
-  (setq helm-make-command (format "make -j%d %%s" arg))
+  (setq helm-make-command (format "%s -j%d %%s" helm-make-executable arg))
   (let ((makefile (helm--make-makefile-exists
                    (projectile-project-root)
                    (if (and (stringp helm-make-build-dir)

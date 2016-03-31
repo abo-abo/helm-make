@@ -52,3 +52,8 @@ If this is set to `t`, cache the targets. Next time when you call
 `helm-make(-projectile)` for the same Makefile, and the modification time of
 the Makefile has not changed meanwhile, reuse the cached targets.
 It is set to `nil` by default.
+
+#### `helm-make-executable`
+
+You can customize executable of make command by changing this variable. Helpful
+for implementing remote compiling.
