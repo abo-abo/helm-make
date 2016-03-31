@@ -81,6 +81,10 @@ You can reset the cache by calling `helm-make-reset-db'."
   :type 'string
   :group 'helm-make)
 
+(defcustom helm-make-require-match t
+  "When non-nil, don't allow selecting a target that's not on the list."
+  :type 'boolean)
+
 (defvar helm-make-command nil
   "Store the make command.")
 
@@ -252,7 +256,7 @@ and cache targets of MAKEFILE, if `helm-make-cache-targets' is t."
                  :history 'helm-make-target-history
                  :preselect (car helm-make-target-history)
                  :action 'helm--make-action
-                 :require-match t))
+                 :require-match helm-make-require-match))
       (ido
        (let ((target (ido-completing-read
                       "Target: " targets
