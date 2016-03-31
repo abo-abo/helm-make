@@ -106,7 +106,6 @@ An exception is \"GNUmakefile\", only GNU make unterstand it.")
 (defun helm-make (&optional arg)
   "Call \"make -j ARG target\". Target is selected with completion."
   (interactive "p")
-  "make %s"
   (setq helm-make-command (format "%s -j%d %%s" helm-make-executable arg))
   (let ((makefile (helm--make-makefile-exists default-directory)))
     (if makefile
