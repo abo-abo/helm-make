@@ -57,3 +57,14 @@ It is set to `nil` by default.
 
 You can customize executable of make command by changing this variable. Helpful
 for implementing remote compiling.
+
+#### `helm-make-named-buffer`
+
+When setting helm-make-named-buffer to `t` all make buffers will be named based
+on their make target. e.g. \*Helm-Make all\* for `make all`. This is useful if
+you want to run multiple make targets at the same time.
+
+#### `helm-make-comint`
+
+When setting helm-make-comint to `t` helm-make will use Comint mode instead of
+Compilation mode. This is useful if you want to interact with the make buffer.
