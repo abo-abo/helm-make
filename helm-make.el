@@ -117,7 +117,7 @@ An exception is \"GNUmakefile\", only GNU make unterstand it.")
       (delete-window (get-buffer-window buffer-name)))
     (when (get-buffer buffer-name)
       (kill-buffer buffer-name))
-    (with-current-buffer compile-buffer
+    (with-current-buffer buffer
       (rename-buffer buffer-name))))
 
 (defcustom helm-make-completion-method 'helm
