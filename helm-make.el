@@ -298,7 +298,8 @@ You can specify an additional directory to search for a makefile by
 setting the buffer local variable `helm-make-build-dir'."
   (interactive "p")
   (require 'projectile)
-  (setq helm-make-command (format "%s -j%d %%s" helm-make-executable arg))
+  (setq helm-make-command (format "%s -C %s -j%d %%s"
+                                  helm-make-executable (projectile-project-root) arg))
   (let ((makefile (helm--make-makefile-exists
                    (projectile-project-root)
                    (if (and (stringp helm-make-build-dir)
