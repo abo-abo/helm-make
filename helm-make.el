@@ -172,7 +172,7 @@ An exception is \"GNUmakefile\", only GNU make unterstand it.")
         (let ((str (match-string 1)))
           (unless (string-match "^\\." str)
             (push str targets)))))
-    targets))
+    (nreverse targets)))
 
 (defcustom helm-make-list-target-method 'default
   "Method of obtaining the list of Makefile targets."
