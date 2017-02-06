@@ -68,3 +68,8 @@ you want to run multiple make targets at the same time.
 
 When setting helm-make-comint to `t` helm-make will use Comint mode instead of
 Compilation mode. This is useful if you want to interact with the make buffer.
+
+#### `helm-make-fuzzy-matching`
+
+When this variable is non-nil, fuzzy matching will be enabled helm make
+targets buffer.
