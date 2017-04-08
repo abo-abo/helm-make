@@ -102,9 +102,10 @@ You can reset the cache by calling `helm-make-reset-db'."
 (defvar helm-make-target-history nil
   "Holds the recently used targets.")
 
-(defvar helm-make-makefile-names '("Makefile" "makefile" "GNUmakefile")
+(defvar helm-make-makefile-names '("Makefile" "makefile" "GNUmakefile" "build.ninja")
   "List of Makefile names which make recognizes.
-An exception is \"GNUmakefile\", only GNU make unterstand it.")
+An exception is \"GNUmakefile\", only GNU make understands it.
+Also \"build.ninja\" is specific to the Ninja build tool.")
 
 (defun helm--make-action (target)
   "Make TARGET."
@@ -139,6 +140,22 @@ An exception is \"GNUmakefile\", only GNU make unterstand it.")
     (if makefile
         (helm--make makefile)
       (error "No Makefile in %s" default-directory))))
+
+(defconst helm--make-ninja-target-regexp "^\\(.+\\): "
+  "Regexp to identify targets in the output of \"ninja -t targets\".")
+
+(defun helm--make-target-list-ninja (makefile)
+  "Return the target list for MAKEFILE by parsing the output of \"ninja -t targets\"."
+  (let ((default-directory (file-name-directory (expand-file-name makefile)))
+        (ninja-exe helm-make-executable) ; take a copy in case buffer-local
+        targets)
+    (with-temp-buffer
+      (call-process ninja-exe nil t t "-f" (file-name-nondirectory makefile)
+                    "-t" "targets" "all")
+      (goto-char (point-min))
+      (while (re-search-forward helm--make-ninja-target-regexp nil t)
+        (push (match-string 1) targets))
+      targets)))
 
 (defun helm--make-target-list-qp (makefile)
   "Return the target list for MAKEFILE by parsing the output of \"make -nqp\"."
@@ -178,7 +195,8 @@ An exception is \"GNUmakefile\", only GNU make unterstand it.")
   "Method of obtaining the list of Makefile targets."
   :type '(choice
           (const :tag "Default" default)
-          (const :tag "make -qp" qp)))
+          (const :tag "make -qp" qp)
+          (const :tag "Ninja" ninja)))
 
 (defun helm--make-makefile-exists (base-dir &optional dir-list)
   "Check if one of `helm-make-makefile-names' exist in BASE-DIR.
@@ -224,9 +242,10 @@ and cache targets of MAKEFILE, if `helm-make-cache-targets' is t."
                          (helm-make-dbfile-targets entry))
                     (helm-make-dbfile-targets entry))
                    (t
-                    (delete-dups (if (eq helm-make-list-target-method 'default)
-                                     (helm--make-target-list-default makefile)
-                                   (helm--make-target-list-qp makefile)))))))
+                    (delete-dups (pcase helm-make-list-target-method
+                                   (`default (helm--make-target-list-default makefile))
+                                   (`qp (helm--make-target-list-qp makefile))
+                                   (`ninja (helm--make-target-list-ninja makefile))))))))
     (when helm-make-sort-targets
       (unless (and helm-make-cache-targets
                    entry
