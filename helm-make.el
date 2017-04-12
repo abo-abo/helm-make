@@ -236,16 +236,16 @@ and cache targets of MAKEFILE, if `helm-make-cache-targets' is t."
          (entry (gethash makefile helm-make-db nil))
          (new-entry (make-helm-make-dbfile))
          (targets (cond
-                    ((and helm-make-cache-targets
-                          entry
-                          (equal modtime (helm-make-dbfile-modtime entry))
-                          (helm-make-dbfile-targets entry))
-                     (helm-make-dbfile-targets entry))
-                    (t
-                     (delete-dups (cl-case helm-make-list-target-method
-                                    (default (helm--make-target-list-default makefile))
-                                    (qp (helm--make-target-list-qp makefile))
-                                    (ninja (helm--make-target-list-ninja makefile))))))))
+                   ((and helm-make-cache-targets
+                         entry
+                         (equal modtime (helm-make-dbfile-modtime entry))
+                         (helm-make-dbfile-targets entry))
+                    (helm-make-dbfile-targets entry))
+                   (t
+                    (delete-dups (cl-case helm-make-list-target-method
+                                   (default (helm--make-target-list-default makefile))
+                                   (qp (helm--make-target-list-qp makefile))
+                                   (ninja (helm--make-target-list-ninja makefile))))))))
     (when helm-make-sort-targets
       (unless (and helm-make-cache-targets
                    entry
