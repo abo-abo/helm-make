@@ -96,6 +96,13 @@ You can reset the cache by calling `helm-make-reset-db'."
   "When non-nil, enable fuzzy matching in helm make target(s) buffer."
   :type 'boolean)
 
+(defcustom helm-make-completion-method 'helm
+  "Method to select a candidate from a list of strings."
+  :type '(choice
+          (const :tag "Helm" helm)
+          (const :tag "Ido" ido)
+          (const :tag "Ivy" ivy)))
+
 (defvar helm-make-command nil
   "Store the make command.")
 
@@ -109,10 +116,17 @@ Also \"build.ninja\" is specific to the Ninja build tool.")
 
 (defun helm--make-action (target)
   "Make TARGET."
-  (let* ((make-command (format helm-make-command target))
+  (let* ((targets (and (eq helm-make-completion-method 'helm)
+                       (> (length (helm-marked-candidates)) 1)
+                       (mapconcat 'identity (helm-marked-candidates) " ")))
+         (make-command (format helm-make-command (or targets target)))
          (compile-buffer (compile make-command helm-make-comint)))
     (when helm-make-named-buffer
-      (helm--make-rename-buffer compile-buffer target))))
+      (helm--make-rename-buffer
+       compile-buffer
+       (if targets
+           (format "%s..." (substring targets 0 (string-match " " targets)))
+         target)))))
 
 (defun helm--make-rename-buffer (buffer target)
   "Rename the compilation BUFFER based on the make TARGET."
@@ -123,13 +137,6 @@ Also \"build.ninja\" is specific to the Ninja build tool.")
       (kill-buffer buffer-name))
     (with-current-buffer buffer
       (rename-buffer buffer-name))))
-
-(defcustom helm-make-completion-method 'helm
-  "Method to select a candidate from a list of strings."
-  :type '(choice
-          (const :tag "Helm" helm)
-          (const :tag "Ido" ido)
-          (const :tag "Ivy" ivy)))
 
 ;;;###autoload
 (defun helm-make (&optional arg)
