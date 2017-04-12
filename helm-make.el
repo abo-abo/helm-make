@@ -109,10 +109,17 @@ Also \"build.ninja\" is specific to the Ninja build tool.")
 
 (defun helm--make-action (target)
   "Make TARGET."
-  (let* ((make-command (format helm-make-command target))
+  (let* ((targets (when (and (eq helm-make-completion-method 'helm)
+                             (> (length (helm-marked-candidates)) 1))
+                    (mapconcat 'identity (helm-marked-candidates) " ")))
+         (make-command (format helm-make-command (if targets targets target)))
          (compile-buffer (compile make-command helm-make-comint)))
     (when helm-make-named-buffer
-      (helm--make-rename-buffer compile-buffer target))))
+      (helm--make-rename-buffer
+       compile-buffer
+       (if targets
+           (format "%s..." (substring targets 0 (string-match " " targets)))
+         target)))))
 
 (defun helm--make-rename-buffer (buffer target)
   "Rename the compilation BUFFER based on the make TARGET."
