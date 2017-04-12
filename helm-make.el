@@ -96,6 +96,13 @@ You can reset the cache by calling `helm-make-reset-db'."
   "When non-nil, enable fuzzy matching in helm make target(s) buffer."
   :type 'boolean)
 
+(defcustom helm-make-completion-method 'helm
+  "Method to select a candidate from a list of strings."
+  :type '(choice
+          (const :tag "Helm" helm)
+          (const :tag "Ido" ido)
+          (const :tag "Ivy" ivy)))
+
 (defvar helm-make-command nil
   "Store the make command.")
 
@@ -130,13 +137,6 @@ Also \"build.ninja\" is specific to the Ninja build tool.")
       (kill-buffer buffer-name))
     (with-current-buffer buffer
       (rename-buffer buffer-name))))
-
-(defcustom helm-make-completion-method 'helm
-  "Method to select a candidate from a list of strings."
-  :type '(choice
-          (const :tag "Helm" helm)
-          (const :tag "Ido" ido)
-          (const :tag "Ivy" ivy)))
 
 ;;;###autoload
 (defun helm-make (&optional arg)
