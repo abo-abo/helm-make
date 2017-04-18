@@ -1,8 +1,9 @@
 ### Description
 
 A call to `helm-make` will give you a `helm` selection of this directory
-Makefile's targets. Selecting a target will call `compile` on it.
-You can cancel as usual with `C-g`.
+Makefile's targets. Selecting a target will call `compile` on it. You can cancel
+as usual with `C-g`. Support is provided for the various flavors of Make tools,
+as well as the Ninja build tool.
 
 ### Install
 
@@ -28,8 +29,9 @@ This is a `helm-make` called with `(projectile-project-root)` as base directory.
 What method should be used to parse the Makefile. The default value is
 `default`, which is a pure elisp solution, but falls a bit short when the
 Makefile includes other Makefile's. The second option is `qp`, it is much more
-accurate, as it uses the database produced by make to extract the
-targets. But could be a bit slower when the database produced by make is large.
+accurate, as it uses the database produced by make to extract the targets. But
+could be a bit slower when the database produced by make is large. The last
+option is `ninja`, which should be used if you are using the Ninja build tool.
 
 #### `helm-make-build-dir`
 
