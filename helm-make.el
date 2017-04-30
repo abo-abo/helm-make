@@ -80,6 +80,12 @@ You can reset the cache by calling `helm-make-reset-db'."
   :type 'string
   :group 'helm-make)
 
+(defcustom helm-make-arguments "-j%d"
+  "Pass these arguments to `helm-make-executable'. If `%d' is
+included, it will be substituted with the universal argument."
+  :type 'string
+  :group 'helm-make)
+
 (defcustom helm-make-require-match t
   "When non-nil, don't allow selecting a target that's not on the list."
   :type 'boolean)
@@ -142,7 +148,7 @@ Also \"build.ninja\" is specific to the Ninja build tool.")
 (defun helm-make (&optional arg)
   "Call \"make -j ARG target\". Target is selected with completion."
   (interactive "p")
-  (setq helm-make-command (format "%s -j%d %%s" helm-make-executable arg))
+  (setq helm-make-command (format (concat "%s " helm-make-arguments " %%s") helm-make-executable arg))
   (let ((makefile (helm--make-makefile-exists default-directory)))
     (if makefile
         (helm--make makefile)
@@ -335,7 +341,7 @@ setting the buffer local variable `helm-make-build-dir'."
                      `(,@helm-make-build-dir "" "build")))))
     (if (not makefile)
         (error "No Makefile found for project %s" (projectile-project-root))
-      (setq helm-make-command (format "%s -C %s -j%d %%s"
+      (setq helm-make-command (format (concat "%s -C %s " helm-make-arguments " %%s")
                                       helm-make-executable
                                       (file-name-directory makefile)
                                       arg))

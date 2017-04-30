@@ -60,6 +60,11 @@ It is set to `nil` by default.
 You can customize executable of make command by changing this variable. Helpful
 for implementing remote compiling.
 
+#### `helm-make-arguments`
+
+Customizes arguments which are passed to the make executable when building. To
+include the universal argument, use `%d`. Default is `-j%d`.
+
 #### `helm-make-named-buffer`
 
 When setting helm-make-named-buffer to `t` all make buffers will be named based
