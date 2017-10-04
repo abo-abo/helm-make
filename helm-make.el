@@ -343,7 +343,7 @@ setting the buffer local variable `helm-make-build-dir'."
         (error "No Makefile found for project %s" (projectile-project-root))
       (setq helm-make-command (format (concat "%s -C %s " helm-make-arguments " %%s")
                                       helm-make-executable
-                                      (replace-regexp-in-string "/\\(scp\\|ssh\\).+?:" ""
+                                      (replace-regexp-in-string "^/\\(scp\\|ssh\\).+?:" ""
                                                                 (file-name-directory makefile))
                                       arg))
       (helm--make makefile))))
