@@ -80,9 +80,15 @@ You can reset the cache by calling `helm-make-reset-db'."
   :type 'string
   :group 'helm-make)
 
+(defcustom helm-make-ninja-executable "ninja"
+  "Store the name of ninja executable."
+  :type 'string
+  :group 'helm-make)
+
 (defcustom helm-make-arguments "-j%d"
-  "Pass these arguments to `helm-make-executable'. If `%d' is
-included, it will be substituted with the universal argument."
+  "Pass these arguments to `helm-make-executable' or
+`helm-make-ninja-executable'. If `%d' is included, it will be substituted
+ with the universal argument."
   :type 'string
   :group 'helm-make)
 
@@ -115,10 +121,12 @@ included, it will be substituted with the universal argument."
 (defvar helm-make-target-history nil
   "Holds the recently used targets.")
 
-(defvar helm-make-makefile-names '("Makefile" "makefile" "GNUmakefile" "build.ninja")
+(defvar helm-make-makefile-names '("Makefile" "makefile" "GNUmakefile")
   "List of Makefile names which make recognizes.
-An exception is \"GNUmakefile\", only GNU make understands it.
-Also \"build.ninja\" is specific to the Ninja build tool.")
+An exception is \"GNUmakefile\", only GNU make understands it.")
+
+(defvar helm-make-ninja-filename "build.ninja"
+  "Ninja build filename which ninja recognizes.")
 
 (defun helm--make-action (target)
   "Make TARGET."
@@ -144,15 +152,32 @@ Also \"build.ninja\" is specific to the Ninja build tool.")
     (with-current-buffer buffer
       (rename-buffer buffer-name))))
 
+(defun helm--make-construct-command (arg file)
+  "Construct the `helm-make-command'.
+
+ARG should be universal prefix value passed to `helm-make' or
+`helm-make-projectile', and file is the path to the Makefile or the
+ninja.build file."
+  (format (concat "%s -C %s " helm-make-arguments " %%s")
+          (cond
+           ((equal helm--make-build-system 'ninja)
+            helm-make-ninja-executable)
+           (t
+            helm-make-executable))
+          (replace-regexp-in-string
+           "^/\\(scp\\|ssh\\).+?:" ""
+           (file-name-directory file))
+          arg))
+
 ;;;###autoload
 (defun helm-make (&optional arg)
   "Call \"make -j ARG target\". Target is selected with completion."
   (interactive "p")
-  (setq helm-make-command (format (concat "%s " helm-make-arguments " %%s") helm-make-executable arg))
   (let ((makefile (helm--make-makefile-exists default-directory)))
-    (if makefile
-        (helm--make makefile)
-      (error "No Makefile in %s" default-directory))))
+    (if (not makefile)
+        (error "No build file in %s" default-directory)
+      (setq helm-make-command (helm--make-construct-command arg makefile))
+      (helm--make makefile))))
 
 (defconst helm--make-ninja-target-regexp "^\\(.+\\): "
   "Regexp to identify targets in the output of \"ninja -t targets\".")
@@ -160,7 +185,7 @@ Also \"build.ninja\" is specific to the Ninja build tool.")
 (defun helm--make-target-list-ninja (makefile)
   "Return the target list for MAKEFILE by parsing the output of \"ninja -t targets\"."
   (let ((default-directory (file-name-directory (expand-file-name makefile)))
-        (ninja-exe helm-make-executable) ; take a copy in case buffer-local
+        (ninja-exe helm-make-ninja-executable) ; take a copy in case buffer-local
         targets)
     (with-temp-buffer
       (call-process ninja-exe nil t t "-f" (file-name-nondirectory makefile)
@@ -205,19 +230,27 @@ Also \"build.ninja\" is specific to the Ninja build tool.")
     (nreverse targets)))
 
 (defcustom helm-make-list-target-method 'default
-  "Method of obtaining the list of Makefile targets."
+  "Method of obtaining the list of Makefile targets.
+
+For ninja build files there exists only one method of obtaining the list of
+targets, and hence no `defcustom'."
   :type '(choice
           (const :tag "Default" default)
-          (const :tag "make -qp" qp)
-          (const :tag "Ninja" ninja)))
+          (const :tag "make -qp" qp)))
+
+(defvar helm--make-build-system nil
+  "Will be 'ninja if the file name is `build.ninja',
+and if the file exists 'make otherwise.")
 
 (defun helm--make-makefile-exists (base-dir &optional dir-list)
-  "Check if one of `helm-make-makefile-names' exist in BASE-DIR.
+  "Check if one of `helm-make-makefile-names' and `helm-make-ninja-filename'
+ exist in BASE-DIR.
 
 Returns the absolute filename to the Makefile, if one exists,
 otherwise nil.
 
-If DIR-LIST is non-nil, also search for `helm-make-makefile-names'."
+If DIR-LIST is non-nil, also search for `helm-make-makefile-names' and
+`helm-make-ninja-filename'."
   (let* ((default-directory (file-truename base-dir))
          (makefiles
           (progn
@@ -225,10 +258,17 @@ If DIR-LIST is non-nil, also search for `helm-make-makefile-names'."
               (setq dir-list (list "")))
             (let (result)
               (dolist (dir dir-list)
-                (dolist (makefile helm-make-makefile-names)
+                (dolist (makefile `(,@helm-make-makefile-names ,helm-make-ninja-filename))
                   (push (expand-file-name makefile dir) result)))
-              (reverse result)))))
-    (cl-find-if 'file-exists-p makefiles)))
+              (reverse result))))
+         (makefile (cl-find-if 'file-exists-p makefiles)))
+    (when makefile
+      (cond
+       ((string-match "build\.ninja$" makefile)
+        (setq helm--make-build-system 'ninja))
+       (t
+        (setq helm--make-build-system 'make))))
+    makefile))
 
 (defvar helm-make-db (make-hash-table :test 'equal)
   "An alist of Makefile and corresponding targets.")
@@ -249,16 +289,19 @@ and cache targets of MAKEFILE, if `helm-make-cache-targets' is t."
          (entry (gethash makefile helm-make-db nil))
          (new-entry (make-helm-make-dbfile))
          (targets (cond
-                    ((and helm-make-cache-targets
-                          entry
-                          (equal modtime (helm-make-dbfile-modtime entry))
-                          (helm-make-dbfile-targets entry))
-                     (helm-make-dbfile-targets entry))
-                    (t
-                     (delete-dups (cl-case helm-make-list-target-method
-                                    (default (helm--make-target-list-default makefile))
-                                    (qp (helm--make-target-list-qp makefile))
-                                    (ninja (helm--make-target-list-ninja makefile))))))))
+                   ((and helm-make-cache-targets
+                         entry
+                         (equal modtime (helm-make-dbfile-modtime entry))
+                         (helm-make-dbfile-targets entry))
+                    (helm-make-dbfile-targets entry))
+                   (t
+                    (delete-dups
+                     (cond ((equal helm--make-build-system 'ninja)
+                            (helm--make-target-list-ninja makefile))
+                           ((equal helm-make-list-target-method 'qp)
+                            (helm--make-target-list-qp makefile))
+                           (t
+                            (helm--make-target-list-default makefile))))))))
     (when helm-make-sort-targets
       (unless (and helm-make-cache-targets
                    entry
@@ -340,13 +383,8 @@ setting the buffer local variable `helm-make-build-dir'."
                        `(,helm-make-build-dir "" "build")
                      `(,@helm-make-build-dir "" "build")))))
     (if (not makefile)
-        (error "No Makefile found for project %s" (projectile-project-root))
-      (setq helm-make-command (format (concat "%s -C %s " helm-make-arguments " %%s")
-                                      helm-make-executable
-                                      (replace-regexp-in-string
-                                       "^/\\(scp\\|ssh\\).+?:" ""
-                                       (file-name-directory makefile))
-                                      arg))
+        (error "No build file found for project %s" (projectile-project-root))
+      (setq helm-make-command (helm--make-construct-command arg makefile))
       (helm--make makefile))))
 
 (provide 'helm-make)
