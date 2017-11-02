@@ -155,6 +155,10 @@ An exception is \"GNUmakefile\", only GNU make understands it.")
     (with-current-buffer buffer
       (rename-buffer buffer-name))))
 
+(defvar helm--make-build-system nil
+  "Will be 'ninja if the file name is `build.ninja',
+and if the file exists 'make otherwise.")
+
 (defun helm--make-construct-command (arg file)
   "Construct the `helm-make-command'.
 
@@ -163,10 +167,10 @@ ARG should be universal prefix value passed to `helm-make' or
 ninja.build file."
   (format (concat "%s -C %s " helm-make-arguments " %%s")
           (cond
-           ((equal helm--make-build-system 'ninja)
-            helm-make-ninja-executable)
-           (t
-            helm-make-executable))
+            ((equal helm--make-build-system 'ninja)
+             helm-make-ninja-executable)
+            (t
+             helm-make-executable))
           (replace-regexp-in-string
            "^/\\(scp\\|ssh\\).+?:" ""
            (file-name-directory file))
@@ -241,10 +245,6 @@ targets, and hence no `defcustom'."
           (const :tag "Default" default)
           (const :tag "make -qp" qp)))
 
-(defvar helm--make-build-system nil
-  "Will be 'ninja if the file name is `build.ninja',
-and if the file exists 'make otherwise.")
-
 (defun helm--make-makefile-exists (base-dir &optional dir-list)
   "Check if one of `helm-make-makefile-names' and `helm-make-ninja-filename'
  exist in BASE-DIR.
@@ -267,10 +267,10 @@ If DIR-LIST is non-nil, also search for `helm-make-makefile-names' and
          (makefile (cl-find-if 'file-exists-p makefiles)))
     (when makefile
       (cond
-       ((string-match "build\.ninja$" makefile)
-        (setq helm--make-build-system 'ninja))
-       (t
-        (setq helm--make-build-system 'make))))
+        ((string-match "build\.ninja$" makefile)
+         (setq helm--make-build-system 'ninja))
+        (t
+         (setq helm--make-build-system 'make))))
     makefile))
 
 (defvar helm-make-db (make-hash-table :test 'equal)
