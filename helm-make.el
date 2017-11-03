@@ -135,7 +135,7 @@ An exception is \"GNUmakefile\", only GNU make understands it.")
                        (or (> (length (helm-marked-candidates)) 1)
                            ;; Give single marked candidate precedence over current selection.
                            (unless (equal (car (helm-marked-candidates)) target)
-                             (setq target (car (helm-marked-candidates)))))
+                             (setq target (car (helm-marked-candidates))) nil))
                        (mapconcat 'identity (helm-marked-candidates) " ")))
          (make-command (format helm-make-command (or targets target)))
          (compile-buffer (compile make-command helm-make-comint)))
