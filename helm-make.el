@@ -33,6 +33,7 @@
 (require 'helm)
 
 (declare-function ivy-read "ext:ivy")
+(declare-function projectile-project-root "ext:projectile")
 
 (defgroup helm-make nil
   "Select a Makefile target with helm."
@@ -292,19 +293,20 @@ and cache targets of MAKEFILE, if `helm-make-cache-targets' is t."
          (entry (gethash makefile helm-make-db nil))
          (new-entry (make-helm-make-dbfile))
          (targets (cond
-                   ((and helm-make-cache-targets
-                         entry
-                         (equal modtime (helm-make-dbfile-modtime entry))
-                         (helm-make-dbfile-targets entry))
-                    (helm-make-dbfile-targets entry))
-                   (t
-                    (delete-dups
-                     (cond ((equal helm--make-build-system 'ninja)
-                            (helm--make-target-list-ninja makefile))
-                           ((equal helm-make-list-target-method 'qp)
-                            (helm--make-target-list-qp makefile))
-                           (t
-                            (helm--make-target-list-default makefile))))))))
+                    ((and helm-make-cache-targets
+                          entry
+                          (equal modtime (helm-make-dbfile-modtime entry))
+                          (helm-make-dbfile-targets entry))
+                     (helm-make-dbfile-targets entry))
+                    (t
+                     (delete-dups
+                      (cond
+                        ((equal helm--make-build-system 'ninja)
+                         (helm--make-target-list-ninja makefile))
+                        ((equal helm-make-list-target-method 'qp)
+                         (helm--make-target-list-qp makefile))
+                        (t
+                         (helm--make-target-list-default makefile))))))))
     (when helm-make-sort-targets
       (unless (and helm-make-cache-targets
                    entry
