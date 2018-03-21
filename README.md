@@ -75,6 +75,12 @@ When setting helm-make-named-buffer to `t` all make buffers will be named based
 on their make target. e.g. \*Helm-Make all\* for `make all`. This is useful if
 you want to run multiple make targets at the same time.
 
+#### `helm-make-named-buffer`
+
+When set to a non-zero value, invocations of make or ninja will run at this
+niceness level. Default is 0, i.e. don't nice make commands.
+
+
 #### `helm-make-comint`
 
 When setting helm-make-comint to `t` helm-make will use Comint mode instead of
