@@ -172,7 +172,8 @@ ARG should be universal prefix value passed to `helm-make' or
 `helm-make-projectile', and file is the path to the Makefile or the
 ninja.build file."
   (format (concat "%s%s -C %s " helm-make-arguments " %%s")
-          (if (eql helm-make-niceness 0) ""
+          (if (= helm-make-niceness 0)
+              ""
             (format "nice -n %d " helm-make-niceness))
           (cond
             ((equal helm--make-build-system 'ninja)
