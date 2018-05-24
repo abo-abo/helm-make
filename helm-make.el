@@ -145,17 +145,13 @@ An exception is \"GNUmakefile\", only GNU make understands it.")
          (make-command (format helm-make-command (or targets target)))
          (compile-buffer (compile make-command helm-make-comint)))
     (when helm-make-named-buffer
-      (helm--make-rename-buffer
-       compile-buffer
-       (if targets
-           (format "%s..." (substring targets 0 (string-match " " targets)))
-         target)))))
+      (helm--make-rename-buffer compile-buffer (or targets target)))))
 
 (defun helm--make-rename-buffer (buffer target)
   "Rename the compilation BUFFER based on the make TARGET."
-  (let ((buffer-name (format "*compilation (%s)*" target)))
-    (when (get-buffer-window buffer-name)
-      (delete-window (get-buffer-window buffer-name)))
+  (let ((buffer-name (format "*compilation in %s (%s)*"
+                             (abbreviate-file-name default-directory)
+                             target)))
     (when (get-buffer buffer-name)
       (kill-buffer buffer-name))
     (with-current-buffer buffer

@@ -71,11 +71,12 @@ include the universal argument, use `%d`. Default is `-j%d`.
 
 #### `helm-make-named-buffer`
 
-When setting helm-make-named-buffer to `t` all make buffers will be named based
-on their make target. e.g. \*Helm-Make all\* for `make all`. This is useful if
-you want to run multiple make targets at the same time.
+When setting helm-make-named-buffer to `t` all make buffers will be named
+based on their make target and `default-directory`. e.g. \*compilation in
+~/emacs (all)\* for `make all` in /home/USER/emacs. This is useful if you want
+to run multiple compilations at the same time.
 
-#### `helm-make-named-buffer`
+#### `helm-make-niceness`
 
 When set to a non-zero value, invocations of make or ninja will run at this
 niceness level. Default is 0, i.e. don't nice make commands.
