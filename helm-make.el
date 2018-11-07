@@ -178,7 +178,7 @@ ninja.build file."
              helm-make-executable))
           (replace-regexp-in-string
            "^/\\(scp\\|ssh\\).+?:" ""
-           (file-name-directory file))
+           (shell-quote-argument (file-name-directory file)))
           arg))
 
 ;;;###autoload
