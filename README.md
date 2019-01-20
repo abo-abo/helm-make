@@ -1,4 +1,4 @@
-### Description
+ ### Description
 
 A call to `helm-make` will give you a `helm` selection of this directory
 Makefile's targets. Selecting a target will call `compile` on it. You can cancel
@@ -91,3 +91,13 @@ Compilation mode. This is useful if you want to interact with the make buffer.
 
 When this variable is non-nil, fuzzy matching will be enabled helm make
 targets buffer.
+
+#### `helm-make-nproc`
+
+Number passed to the '-j' flag.
+
+When this variable is set to `0`, we try to automatically retrieve available
+number of processing units using `helm--make-get-nproc`.
+
+Regardless of the value of this variable, it can be bypassed by
+passing an universal prefix to `helm-make` or `helm-make-projectile`.

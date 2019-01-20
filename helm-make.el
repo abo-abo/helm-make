@@ -121,6 +121,16 @@ You can reset the cache by calling `helm-make-reset-db'."
           (const :tag "Ido" ido)
           (const :tag "Ivy" ivy)))
 
+(defcustom helm-make-nproc 1
+  "Use that many processing units to compile the project.
+
+If `0', automatically retrieve available number of processing units
+using `helm--make-get-nproc'.
+
+Regardless of the value of this variable, it can be bypassed by
+passing an universal prefix to `helm-make' or `helm-make-projectile'."
+  :type 'integer)
+
 (defvar helm-make-command nil
   "Store the make command.")
 
@@ -133,6 +143,22 @@ An exception is \"GNUmakefile\", only GNU make understands it.")
 
 (defvar helm-make-ninja-filename "build.ninja"
   "Ninja build filename which ninja recognizes.")
+
+(defun helm--make-get-nproc ()
+  "Retrieve available number of processing units on this machine.
+
+If it fails to do so, `1' will be returned.
+"
+  (cond
+    ((member system-type '(gnu gnu/linux gnu/kfreebsd cygwin))
+     (if (executable-find "nproc")
+         (string-to-number (string-trim (shell-command-to-string "nproc")))
+       (warn "Can not retrieve available number of processing units, \"nproc\" not found")
+       1))
+    ;; What about the other systems '(darwin windows-nt aix berkeley-unix hpux usg-unix-v)?
+    (t
+     (warn "Retrieving available number of processing units not implemented for system-type %s" system-type)
+     1)))
 
 (defun helm--make-action (target)
   "Make TARGET."
@@ -179,12 +205,15 @@ ninja.build file."
           (replace-regexp-in-string
            "^/\\(scp\\|ssh\\).+?:" ""
            (shell-quote-argument (file-name-directory file)))
-          arg))
+          (let ((jobs (abs (if arg (prefix-numeric-value arg)
+                             (if (= helm-make-nproc 0) (helm--make-get-nproc)
+                               helm-make-nproc)))))
+            (if (> jobs 0) jobs 1))))
 
 ;;;###autoload
 (defun helm-make (&optional arg)
   "Call \"make -j ARG target\". Target is selected with completion."
-  (interactive "p")
+  (interactive "P")
   (let ((makefile (helm--make-makefile-exists default-directory)))
     (if (not makefile)
         (error "No build file in %s" default-directory)
@@ -383,7 +412,7 @@ followed by `projectile-project-root'/build, for a makefile.
 
 You can specify an additional directory to search for a makefile by
 setting the buffer local variable `helm-make-build-dir'."
-  (interactive "p")
+  (interactive "P")
   (require 'projectile)
   (let ((makefile (helm--make-makefile-exists
                    (projectile-project-root)
