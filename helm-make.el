@@ -388,12 +388,13 @@ and cache targets of MAKEFILE, if `helm-make-cache-targets' is t."
              :preselect (when helm-make-target-history
                           (car helm-make-target-history))))
       (ivy
-       (ivy-read "Target: "
-                 targets
-                 :history 'helm-make-target-history
-                 :preselect (car helm-make-target-history)
-                 :action 'helm--make-action
-                 :require-match helm-make-require-match))
+       (unless (window-minibuffer-p)
+         (ivy-read "Target: "
+                   targets
+                   :history 'helm-make-target-history
+                   :preselect (car helm-make-target-history)
+                   :action 'helm--make-action
+                   :require-match helm-make-require-match)))
       (ido
        (let ((target (ido-completing-read
                       "Target: " targets
