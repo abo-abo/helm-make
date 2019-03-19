@@ -1,11 +1,10 @@
 ;;; helm-make.el --- Select a Makefile target with helm
 
-;; Copyright (C) 2014 Oleh Krehel
+;; Copyright (C) 2014-2019 Oleh Krehel
 
 ;; Author: Oleh Krehel <ohwoeowho@gmail.com>
 ;; URL: https://github.com/abo-abo/helm-make
 ;; Version: 0.2.0
-;; Package-Requires: ((helm "1.5.3") (projectile "0.11.0"))
 ;; Keywords: makefile
 
 ;; This file is not part of GNU Emacs
