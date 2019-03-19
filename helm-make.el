@@ -30,8 +30,11 @@
 
 ;;; Code:
 
-(require 'helm)
+(require 'subr-x)
 
+(declare-function helm "ext:helm")
+(declare-function helm-marked-candidates "ext:helm")
+(declare-function helm-build-sync-source "ext:helm")
 (declare-function ivy-read "ext:ivy")
 (declare-function projectile-project-root "ext:projectile")
 
@@ -380,6 +383,7 @@ and cache targets of MAKEFILE, if `helm-make-cache-targets' is t."
     (delete-dups helm-make-target-history)
     (cl-case helm-make-completion-method
       (helm
+       (require 'helm)
        (helm :sources (helm-build-sync-source "Targets"
                         :candidates 'targets
                         :fuzzy-match helm-make-fuzzy-matching
