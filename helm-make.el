@@ -162,6 +162,8 @@ If it fails to do so, `1' will be returned.
      (warn "Retrieving available number of processing units not implemented for system-type %s" system-type)
      1)))
 
+(defvar helm-make--last-item nil)
+
 (defun helm--make-action (target)
   "Make TARGET."
   (setq helm-make--last-item target)
@@ -361,8 +363,6 @@ and cache targets of MAKEFILE, if `helm-make-cache-targets' is t."
   "Reset cache, see `helm-make-cache-targets'."
   (interactive)
   (clrhash helm-make-db))
-
-(defvar helm-make--last-item nil)
 
 (defun helm--make (makefile)
   "Call make for MAKEFILE."
