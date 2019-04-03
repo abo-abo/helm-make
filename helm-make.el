@@ -164,6 +164,7 @@ If it fails to do so, `1' will be returned.
 
 (defun helm--make-action (target)
   "Make TARGET."
+  (setq helm-make--last-item target)
   (let* ((targets (and (eq helm-make-completion-method 'helm)
                        (or (> (length (helm-marked-candidates)) 1)
                            ;; Give single marked candidate precedence over current selection.
@@ -361,6 +362,8 @@ and cache targets of MAKEFILE, if `helm-make-cache-targets' is t."
   (interactive)
   (clrhash helm-make-db))
 
+(defvar helm-make--last-item nil)
+
 (defun helm--make (makefile)
   "Call make for MAKEFILE."
   (when helm-make-do-save
@@ -388,8 +391,7 @@ and cache targets of MAKEFILE, if `helm-make-cache-targets' is t."
                         :fuzzy-match helm-make-fuzzy-matching
                         :action 'helm--make-action)
              :history 'helm-make-target-history
-             :preselect (when helm-make-target-history
-                          (car helm-make-target-history))))
+             :preselect helm-make--last-item))
       (ivy
        (unless (window-minibuffer-p)
          (ivy-read "Target: "
