@@ -30,6 +30,8 @@
 ;;; Code:
 
 (require 'subr-x)
+(eval-when-compile
+  (require 'helm-source nil t))
 
 (declare-function helm "ext:helm")
 (declare-function helm-marked-candidates "ext:helm")
