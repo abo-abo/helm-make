@@ -221,7 +221,9 @@ ninja.build file."
 (defun helm-make (&optional arg)
   "Call \"make -j ARG target\". Target is selected with completion."
   (interactive "P")
-  (let ((makefile (helm--make-makefile-exists default-directory)))
+  (let ((makefile (helm--make-makefile-exists (if (and (fboundp 'project-current) (project-current))
+                                                  (car (project-roots (project-current)))
+                                                default-directory))))
     (if (not makefile)
         (error "No build file in %s" default-directory)
       (setq helm-make-command (helm--make-construct-command arg makefile))
