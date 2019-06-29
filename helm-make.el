@@ -30,6 +30,7 @@
 ;;; Code:
 
 (require 'subr-x)
+(require 'cl-lib)
 (eval-when-compile
   (require 'helm-source nil t))
 
@@ -217,11 +218,19 @@ ninja.build file."
                                helm-make-nproc)))))
             (if (> jobs 0) jobs 1))))
 
+(defcustom helm-make-directory-functions-list
+  '(helm-make-current-directory helm-make-project-directory)
+  "Functions that return Makefile's directory, sorted by priority."
+  :type '(repeat (choice symbol)))
+
 ;;;###autoload
 (defun helm-make (&optional arg)
   "Call \"make -j ARG target\". Target is selected with completion."
   (interactive "P")
-  (let ((makefile (helm--make-makefile-exists default-directory)))
+  (let ((makefile nil))
+    (cl-find-if
+     (lambda (fn) (setq makefile (helm--make-makefile-exists (funcall fn))))
+     helm-make-directory-functions-list)
     (if (not makefile)
         (error "No build file in %s" default-directory)
       (setq helm-make-command (helm--make-construct-command arg makefile))
@@ -432,6 +441,16 @@ setting the buffer local variable `helm-make-build-dir'."
         (error "No build file found for project %s" (projectile-project-root))
       (setq helm-make-command (helm--make-construct-command arg makefile))
       (helm--make makefile))))
+
+(defun helm-make-project-directory ()
+  "Return the current project root directory if found."
+  (if (and (fboundp 'project-current) (project-current))
+      (car (project-roots (project-current)))
+    nil))
+
+(defun helm-make-current-directory()
+  "Return the current directory."
+  default-directory)
 
 (provide 'helm-make)
 
