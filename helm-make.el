@@ -172,6 +172,8 @@ If it fails to do so, `1' will be returned.
 
 (defvar helm-make--last-item nil)
 
+(defvar-local helm-make--dir nil)
+
 (defun helm--make-action (target)
   "Make TARGET."
   (setq helm-make--last-item target)
@@ -228,7 +230,11 @@ ninja.build file."
   "Call \"make -j ARG target\". Target is selected with completion."
   (interactive "P")
   (let ((makefile (helm--make-makefile-exists
-                   (funcall (cl-find-if 'funcall helm-make-directory-functions-list)))))
+                   (progn
+                     (cl-find-if
+                      (lambda (fn) (setq-local helm-make--dir (funcall fn)))
+                      helm-make-directory-functions-list)
+                     helm-make--dir))))
     (if (not makefile)
         (error "No build file in %s" default-directory)
       (setq helm-make-command (helm--make-construct-command arg makefile))
