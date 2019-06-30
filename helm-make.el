@@ -221,7 +221,12 @@ ninja.build file."
 (defcustom helm-make-directory-functions-list
   '(helm-make-current-directory helm-make-project-directory)
   "Functions that return Makefile's directory, sorted by priority."
-  :type '(repeat (choice symbol)))
+  :type
+  '(repeat
+    (choice
+     (const :tag "Default directory" helm-make-current-directory)
+     (const :tag "Project directory" helm-make-project-directory)
+     (function :tag "Custom function"))))
 
 ;;;###autoload
 (defun helm-make (&optional arg)
