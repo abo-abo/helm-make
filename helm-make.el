@@ -30,6 +30,7 @@
 ;;; Code:
 
 (require 'subr-x)
+(require 'cl-lib)
 (eval-when-compile
   (require 'helm-source nil t))
 
@@ -135,6 +136,11 @@ Regardless of the value of this variable, it can be bypassed by
 passing an universal prefix to `helm-make' or `helm-make-projectile'."
   :type 'integer)
 
+(defcustom helm-make-directory-functions-list
+  '(helm-make-current-directory helm-make-project-directory)
+  "Functions for select directory to make."
+  :type '(repeat (choice symbol)))
+
 (defvar helm-make-command nil
   "Store the make command.")
 
@@ -221,9 +227,8 @@ ninja.build file."
 (defun helm-make (&optional arg)
   "Call \"make -j ARG target\". Target is selected with completion."
   (interactive "P")
-  (let ((makefile (helm--make-makefile-exists (if (and (fboundp 'project-current) (project-current))
-                                                  (car (project-roots (project-current)))
-                                                default-directory))))
+  (let ((makefile (helm--make-makefile-exists
+                   (funcall (cl-find-if 'funcall helm-make-directory-functions-list)))))
     (if (not makefile)
         (error "No build file in %s" default-directory)
       (setq helm-make-command (helm--make-construct-command arg makefile))
@@ -434,6 +439,16 @@ setting the buffer local variable `helm-make-build-dir'."
         (error "No build file found for project %s" (projectile-project-root))
       (setq helm-make-command (helm--make-construct-command arg makefile))
       (helm--make makefile))))
+
+(defun helm-make-project-directory ()
+  "Return current project root directory if found."
+  (if (and (fboundp 'project-current) (project-current))
+      (car (project-roots (project-current)))
+    nil))
+
+(defun helm-make-current-directory()
+  "Return current directory."
+  default-directory)
 
 (provide 'helm-make)
 
