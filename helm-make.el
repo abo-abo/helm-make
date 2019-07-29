@@ -285,7 +285,7 @@ ninja.build file."
     (with-temp-buffer
       (insert-file-contents makefile)
       (goto-char (point-min))
-      (while (re-search-forward "^\\([^: \n]+\\):" nil t)
+      (while (re-search-forward "^\\([^: \n]+\\) *:\\(?: \\|$\\)" nil t)
         (let ((str (match-string 1)))
           (unless (string-match "^\\." str)
             (push str targets)))))
