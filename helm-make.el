@@ -211,7 +211,7 @@ ninja.build file."
             (t
              helm-make-executable))
           (replace-regexp-in-string
-           "^/\\(scp\\|ssh\\).+?:" ""
+           "^/\\(scp\\|ssh\\).+?:.+?:" ""
            (shell-quote-argument (file-name-directory file)))
           (let ((jobs (abs (if arg (prefix-numeric-value arg)
                              (if (= helm-make-nproc 0) (helm--make-get-nproc)
