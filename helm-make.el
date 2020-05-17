@@ -403,6 +403,7 @@ and cache targets of MAKEFILE, if `helm-make-cache-targets' is t."
       (helm
        (require 'helm)
        (helm :sources (helm-build-sync-source "Targets"
+                        :header-name (lambda (name) (format "%s (%s):" name makefile))
                         :candidates 'targets
                         :fuzzy-match helm-make-fuzzy-matching
                         :action 'helm--make-action)
