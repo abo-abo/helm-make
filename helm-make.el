@@ -219,13 +219,14 @@ ninja.build file."
             (if (> jobs 0) jobs 1))))
 
 (defcustom helm-make-directory-functions-list
-  '(helm-make-current-directory helm-make-project-directory)
+  '(helm-make-current-directory helm-make-project-directory helm-make-dominating-directory)
   "Functions that return Makefile's directory, sorted by priority."
   :type
   '(repeat
     (choice
      (const :tag "Default directory" helm-make-current-directory)
      (const :tag "Project directory" helm-make-project-directory)
+     (const :tag "Dominating directory with makefile" helm-make-dominating-directory)
      (function :tag "Custom function"))))
 
 ;;;###autoload
@@ -457,6 +458,10 @@ setting the buffer local variable `helm-make-build-dir'."
 (defun helm-make-current-directory()
   "Return the current directory."
   default-directory)
+
+(defun helm-make-dominating-directory ()
+  "Return the dominating directory that contains a Makefile if found"
+  (locate-dominating-file default-directory 'helm--make-makefile-exists))
 
 (provide 'helm-make)
 
