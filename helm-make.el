@@ -449,6 +449,8 @@ setting the buffer local variable `helm-make-build-dir'."
       (setq helm-make-command (helm--make-construct-command arg makefile))
       (helm--make makefile))))
 
+(defvar project-roots)
+
 (defun helm-make-project-directory ()
   "Return the current project root directory if found."
   (if (and (fboundp 'project-current) (project-current))
