@@ -266,7 +266,8 @@ ninja.build file."
     (with-temp-buffer
       (insert
        (shell-command-to-string
-        "make -nqp __BASH_MAKE_COMPLETION__=1 .DEFAULT 2>/dev/null"))
+        (format "make -f %s -nqp __BASH_MAKE_COMPLETION__=1 .DEFAULT 2>/dev/null"
+                makefile)))
       (goto-char (point-min))
       (unless (re-search-forward "^# Files" nil t)
         (error "Unexpected \"make -nqp\" output"))
