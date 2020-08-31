@@ -36,7 +36,7 @@
 
 (declare-function helm "ext:helm")
 (declare-function helm-marked-candidates "ext:helm")
-(declare-function helm-build-sync-source "ext:helm")
+(declare-function helm-build-sync-source "ext:helm-source" nil t)
 (declare-function ivy-read "ext:ivy")
 (declare-function projectile-project-root "ext:projectile")
 
