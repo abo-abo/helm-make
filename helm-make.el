@@ -38,6 +38,7 @@
 (declare-function helm-marked-candidates "ext:helm")
 (declare-function helm-build-sync-source "ext:helm")
 (declare-function ivy-read "ext:ivy")
+(declare-function consult--read "ext:consult")
 (declare-function projectile-project-root "ext:projectile")
 
 (defgroup helm-make nil
@@ -124,7 +125,8 @@ You can reset the cache by calling `helm-make-reset-db'."
   :type '(choice
           (const :tag "Helm" helm)
           (const :tag "Ido" ido)
-          (const :tag "Ivy" ivy)))
+          (const :tag "Ivy" ivy)
+          (const :tag "Consult" consult)))
 
 (defcustom helm-make-nproc 1
   "Use that many processing units to compile the project.
@@ -424,6 +426,14 @@ and cache targets of MAKEFILE, if `helm-make-cache-targets' is t."
                       "Target: " targets
                       nil nil nil
                       'helm-make-target-history)))
+         (when target
+           (helm--make-action target))))
+      (consult
+       (let ((target (consult--read targets
+                                    :prompt "Target: "
+                                    :history 'helm-make-target-history
+                                    :default (car helm-make-target-history)
+                                    :require-match helm-make-require-match)))
          (when target
            (helm--make-action target)))))))
 
