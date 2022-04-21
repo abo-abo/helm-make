@@ -154,16 +154,10 @@ An exception is \"GNUmakefile\", only GNU make understands it.")
 
 If it fails to do so, `1' will be returned.
 "
-  (cond
-    ((member system-type '(gnu gnu/linux gnu/kfreebsd cygwin))
-     (if (executable-find "nproc")
-         (string-to-number (string-trim (shell-command-to-string "nproc")))
-       (warn "Can not retrieve available number of processing units, \"nproc\" not found")
-       1))
-    ;; What about the other systems '(darwin windows-nt aix berkeley-unix hpux usg-unix-v)?
-    (t
-     (warn "Retrieving available number of processing units not implemented for system-type %s" system-type)
-     1)))
+  (if (executable-find "nproc")
+      (string-to-number (shell-command-to-string "nproc"))
+    (warn "Cannot retrieve available number of processing units, command \"nproc\" not found")
+    1))
 
 (defvar helm-make--last-item nil)
 
