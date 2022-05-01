@@ -466,6 +466,17 @@ setting the buffer local variable `helm-make-build-dir'."
   "Return the dominating directory that contains a Makefile if found"
   (locate-dominating-file default-directory 'helm--make-makefile-exists))
 
+(defun helm-make-select-build-dir ()
+  "Set helm-make-build-dir interactively"
+  (interactive)
+  (let* ((root (helm-make-project-directory))
+         (candidates (cl-remove-if-not (lambda (d) (and (file-directory-p d) (helm--make-makefile-exists root (list d))))
+                                       (directory-files root))))
+    (setq helm-make-build-dir
+          (file-name-nondirectory
+           (completing-read "Build directory: " candidates)))))
+
+
 (provide 'helm-make)
 
 ;;; helm-make.el ends here
