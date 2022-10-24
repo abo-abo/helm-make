@@ -124,6 +124,7 @@ You can reset the cache by calling `helm-make-reset-db'."
   :type '(choice
           (const :tag "Helm" helm)
           (const :tag "Ido" ido)
+          (const :tag "Emacs" emacs)
           (const :tag "Ivy" ivy)))
 
 (defcustom helm-make-nproc 1
@@ -419,6 +420,13 @@ and cache targets of MAKEFILE, if `helm-make-cache-targets' is t."
                    :preselect (car helm-make-target-history)
                    :action 'helm--make-action
                    :require-match helm-make-require-match)))
+      (emacs
+       (let ((target (completing-read
+                      "Target: " targets
+                      nil nil nil
+                      'helm-make-target-history)))
+         (when target
+           (helm--make-action target))))
       (ido
        (let ((target (ido-completing-read
                       "Target: " targets
